@@ -1,14 +1,16 @@
 <?php
+
+/**
+ * Mongodb操作类,仅支持单例模式
+ */
+use MongoDB\Driver\Command;
+use MongoDB\Driver\Manager;
+use MongoDB\Driver\Exception;
+
 class Base{
-    
-    protected $Err;
+    protected static $me;
     protected static $Error;
     protected static $DataBase;
-    
-    
-    public static function GetError(){
-        return static::$Error;
-    }
     
     
     //检测是否安装了PHP的MONGODB插件
@@ -16,54 +18,103 @@ class Base{
         return class_exists('Mongodb\Driver\Manager',false);
     }
     
-    //是否已经打开数据库
     public static function ExistsConnection(){
-        return ( empty(self::$DataBase) )? false : true;
+        return !is_null(static::$DataBase);
     }
-    
-    
+
     //连接数据库
     public static function Connection( $URL,$Option=array() ){
         
         if( !static::ExistsMongo() ){
-            static::$Error  = 'Not Mongodb Driver';
             return false;
         }
         
         try{
-            static::$DataBase      = new Mongodb\Driver\Manager($URL,$Option);
-            print_r(static::$DataBase);
-        }catch (\MongoDB\Driver\Exception $e) {
-            static::$DataBase   = null;
-            static::$Error      = $e->getMessage();
+            static::$DataBase       = new Manager($URL,$Option);
+        }catch(Exception $e) {
+            static::$DataBase       = null;
+            static::$Error          = $e->getMessage();
             return false;
         }
+        
         return true;
     }
     
     //显示所有库列表
-    public static function ShowDataBase(){
-        if( !static::ExistsConnection() ){
+    public static function listDtatBase(){
+        if( is_null(static::$DataBase) ){
             static::$Error  = 'Not Open Mongodb!';
-            return false;
+            return [];
         }
-        $filter     = ['api_total' => ['$gt' => 0]];
-        $options    = [
-            'projection' => ['_id' => 0],
-            'sort' => ['_id' => -1],
-        ];
         
-        // 查询数据
-        $query = new MongoDB\Driver\Query($filter, $options);
-        $cursor = static::$DataBase->executeQuery('leancloud.kc_api_log', $query);
-//
-//        foreach ($cursor as $document) {
-//            print_r($document);
-//        }
+        $Comm   = new Command( ['listDatabases'=>1] );
+        $Bson   = static::$DataBase->executeCommand('admin',$Comm);
+        $Bson->setTypeMap( ['root' => 'array', 'document' => 'array','array'=>'array'] );
+        return $Bson->toArray()[0]['databases'];
+        
     }
     
+    //删除一个库文件
+    public static function dorpDataBase( $BaseName ){
+        return false;
+    }
+    
+    //选择一个库
+    public static function useBase( $BaseName ){
+        if( is_null(static::$me) ){static::$me = new static;}
+        
+        return static::$me;
+    }
+    
+    //显示当前库的用户
+    public static function userList(){
+        
+        return [];
+    }
+    
+    //添加/修改用户
+    public static function userAdd(){
+        return false;
+    }
+    
+    //移除用户
+    public static function userDorp(){
+        
+    }
+    //显示Functions
+    //添加/修改Functions
+    //移除Functions
     
     
+    //选择一个集合
+    public static function useCollections( $CollName ){
+        if( is_null(static::$me) ){static::$me = new static;}
+        return static::$me;
+    }
+    //创建一个集合
+    //修改一个集合
+    //删除一个集合
+    //清空一个集合
     
+    //显示所有索引
+    //创建一个索引
+    //修改一个索引
+    //删除一个索引
+    
+    //创建一条数据
+    //修改一条数据
+    //删除一条数据
+    
+    //条件查询数据
+    //条件删除数据
+    //条件修改数据
+    
+    //导出数据（根据传入参数自动分割文件）
+    
+    //导入数据（根据文件名自动批量导入）
+    
+    public static function GetError(){
+        return static::$Error;
+    }
 }
 
