@@ -19,6 +19,6 @@ class Language extends Home{
             unset($language);
         }
         
-        return ( isset(static::$language[$code]) )? static::$language[$code] : static::$language[$code];
+        return ( isset(static::$language[$code]) )? static::$language[$code] : $code;
     }
 }
