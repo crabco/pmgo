@@ -13,7 +13,7 @@ class Response extends Home{
     }
     
     
-    public static function sucess( $data ){
+    public static function success( $data ){
         if(is_null(static::$me)){static::$me = new static();}
         if( is_string($data) ){
             static::$data = $data;
