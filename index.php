@@ -1,2 +1,2 @@
 <?php
-header("Location: default.php");
+header("Location: pmgo.php");

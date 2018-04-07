@@ -13,12 +13,22 @@ class Language extends Home{
                 echo json_encode(['status'=>false,'error'=>'语言文件加载失败']);
                 exit;
             }
-            
             include_once $File;
             static::$language = $language;
             unset($language);
         }
         
         return ( isset(static::$language[$code]) )? static::$language[$code] : $code;
+    }
+    
+    public static function getall(){
+        $run        = [];
+        $FileList   = scandir(AppPathLanguage);
+        foreach($FileList as $fs){
+            if( !preg_match('/\.php$/i', $fs) )continue;
+            include AppPathLanguage."{$fs}";
+            $run[]  = $language['language'];
+        }
+        return $run;
     }
 }

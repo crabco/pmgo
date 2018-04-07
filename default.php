@@ -1,3 +1,2 @@
 <?php
-require_once("inc/autoload.php");
-Route::run();
+header("Location: pmgo.php");

@@ -1,8 +1,18 @@
 <?php
-if( !empty($_POST) ){
-    $username   = $_POST['username'];
-    $password   = $_POST['password'];
-    
+$LoginOff   = ( Base::ExistsMongo() )? false : true;
+
+if( !empty($_POST) && $LoginOff==false ){
+    $username   = md5($_POST['username']);
+    $password   = hash('sha512', $_POST['password']);
+    $User       = config::ini();
+    if( $username!=md5($User['username'])||$password!=$User['password'] ){
+        header("Location: ". Route::page_go( ["login"=>"loginerr"] ) );
+        exit;
+    }else{
+        $_SESSION['user']       = $User['username'];
+        $_SESSION['language']   = Route::language();
+        header("Location: ".Route::page_go(['entity'=>'main']));exit;
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -20,19 +30,27 @@ if( !empty($_POST) ){
         <div id="login_title"><?php echo Language::get('nologin');?></div>
         <div id="login_tr">
             <div id="login_name"><?php echo Language::get('user');?></div>
-            <div id="login_input"><input id="username" name="username" type="text" /></div>
+            <div id="login_input"><input id="username" name="username" type="text" <?php if($LoginOff){echo 'disabled';}?> /></div>
         </div>
         <div id="login_tr">
             <div id="login_name"><?php echo Language::get('pass');?></div>
-            <div id="login_input"><input id="password" name="password" type="password" /></div>
+            <div id="login_input"><input id="password" name="password" type="password" <?php if($LoginOff){echo 'disabled';}?> /></div>
         </div>
         <div id="login_tr">
-            <button type="submit" id="login_submit"><?php echo Language::get('login')?></button>
+            <button type="submit" id="login_submit" <?php if($LoginOff){echo 'disabled';}?>><?php echo Language::get('login')?></button>
         </div>
-        <div id="login_line"></div>
+        <div class="width_line"></div>
         <div id="login_exp" title="<?php echo Language::get('loginexp');?>">
             <span id="notice"><?php echo Language::get('notice');?></span>
-            <?php echo Language::get('loginexp');?>
+            <?php
+            if( !empty($_GET['login']) ){
+                echo Language::get($_GET['login']);
+            }elseif( !$LoginOff ){
+                echo Language::get('loginexp');
+            }else{
+                echo Language::get('notmongodb');
+            }
+            ?>
         </div>
     </div>
     </form>

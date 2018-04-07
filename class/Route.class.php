@@ -2,29 +2,38 @@
 class Route extends Home{
     
     protected static $me;
-    
     //需要加载的文件路径
     protected static $entity;
     //加载的数据库配置名称
     protected static $base;
+    //所有的数据库配置名称
+    protected static $baselist  = [];
     //加载的语言
     protected static $language;
     //数据传输方式
     protected static $method;
-    
-    
+    //当前主路径地址
+    protected static $url_file;
+    //当前带路由的访问地址
+    protected static $url_route;
+
+
+
+
     public function __construct() {
         
         $Home   = config::ini()['main'];
-        if( substr($_SERVER['PHP_SELF'],0,strlen($Home))!=$Home ){
-            header("Location: {$Home}");
-            exit;
-        }
+        static::$entity         = ( !empty($_GET['e']) )?       $_GET['e'] : "login";
+        static::$base           = ( !empty($_GET['b']) )?       $_GET['b'] : "";
+        static::$language       = ( !empty($_GET['l']) )?       $_GET['l'] : config::ini()['language'];
+        static::$url_file       = $Home;
         
-        $Path                    = explode("/",substr($_SERVER['PHP_SELF'],strlen($Home)));
-        static::$entity         = ( !empty($Path[1]) )? $Path[1] : "login";
-        static::$base           = ( !empty($Path[2]) )? $Path[2] : "default";
-        static::$language       = ( !empty($Path[3]) )? $Path[3] : config::ini()['language'];
+        //加载系统的数据库配置
+        if( is_file(AppPathInc."database.php") ){
+            include_once AppPathInc."database.php";
+            static::$baselist = $database;
+            unset($database);
+        }
     }
     
     //开始加载Entity文件
@@ -43,21 +52,47 @@ class Route extends Home{
     public static function base(){
         return static::$base;
     }
+    public static function baselist(){
+        return static::$baselist;
+    }
     public static function language(){
         return static::$language;
     }
     public static function method(){
         return static::$method;
     }
+    public static function url_file(){
+        return static::$url_file;
+    }
+    public static function url_route(){
+        return static::$url_route;
+    }
     
+    public static function page_go( $param ){
+        $url    = static::$url_file."?";
+        $url   .= ( !isset($param['entity']) )?     "&e=".static::$entity : "&e={$param['entity']}"; 
+        $url   .= ( !isset($param['base']) )?       "&b=".static::$base : "&b={$param['base']}"; 
+        $url   .= ( !isset($param['language']) )?   "&l=".static::$language : "&l={$param['language']}"; 
+        
+        unset($param['page'],$param['base'],$param['language']);
+        
+        if( !empty($param) ){
+            foreach($param as $vs=>$rs){
+                $url .= "&{$vs}={$rs}";
+            }
+        }
+        return $url;
+    }
+
     
+
     //通过选择的数据库连接信息打开数据库连接
     public static function load_base(){
         
         //如果数据库已经被连接
         if( Base::ExistsConnection() )return true;
         
-        if( !is_file(AppPathInc."database.php") ){
+        if( empty(static::$baselist) || empty($database[static::$base]) ){
             static::$Error    = 4006;
             return false;
         }
@@ -65,13 +100,6 @@ class Route extends Home{
         //如果变量为空
         if( empty(static::$base) ){
             static::$Error    = 4008;
-            return false;
-        }
-        
-        include_once AppPathInc."database.php";
-        
-        if( empty($database) || empty($database[static::$base]) ){
-            static::$Error    = 4006;
             return false;
         }
         
@@ -108,9 +136,6 @@ class Route extends Home{
         
         return true;
     }
-    
-    
-    
 
         //开始执行的主入口
     public static function run(){
